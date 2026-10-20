@@ -1,0 +1,24 @@
+{
+  "targetBuild": "EU dada OS3.0.307.0.WOCCNXM",
+  "experimental": true,
+  "components": [
+    "xiaoai",
+    "wallet"
+  ],
+  "sourceArchives": [
+    {
+      "zip": "HyperOS3-Wallet-Dada305-v1.1.zip",
+      "sha256": "f3ef9b58ffbacb05a941d14080321ffc22fcbdf663162592b2bfdb2e0024bbe3"
+    },
+    {
+      "zip": "HyperOS3-XiaoAI-Full-Dada307-v0.2-merged-test.zip",
+      "sha256": "ed6e8fc13cd1a5d03b404abed6ad2c1830f0a3366a8c6195ed957e73d3f801c1"
+    }
+  ],
+  "allBinaryPayloadsUnchanged": true,
+  "walletPayloadOrigin": "CN305 plus previously verified Xiaomi-signed Mipay release; tested on EU307",
+  "userDataOrEnrollmentIncluded": false,
+  "noSelectionIsNotRemoval": true,
+  "defaultRolesModified": false,
+  "walletPropertiesOnlyWhenWalletSelected": true
+}

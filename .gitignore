@@ -1,0 +1,16 @@
+/inputs/
+/dist/
+*.zip
+*.tar
+*.gz
+*.apk
+*.so
+__pycache__/
+*.pyc
+.env
+.env.*
+hosts.yml
+adb-*.conf
+*backup*/
+*Backup*/
+*.log

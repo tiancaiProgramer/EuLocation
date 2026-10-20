@@ -1,0 +1,15 @@
+#!/sbin/sh
+umask 022
+ui_print() { echo "$1"; }
+OUTFD=$2
+ZIPFILE=$3
+if ! command -v install_module >/dev/null 2>&1; then
+  if [ -f /data/adb/magisk/util_functions.sh ]; then
+    . /data/adb/magisk/util_functions.sh
+  fi
+fi
+if ! command -v install_module >/dev/null 2>&1; then
+  ui_print "Install with KernelSU in boot mode."
+  exit 1
+fi
+install_module

@@ -1,0 +1,6 @@
+id=HyperOS3EU307Optional
+name=HyperOS3 EU307 本地化（可选小爱＋钱包）
+version=v0.3-test
+versionCode=3
+author=Local Xiaomi 15 compatibility test
+description=EU307 exact-profile optional installer: XiaoAI core+wake and/or Xiaomi Wallet. Volume-key selection, original-signed tested payloads, no data/setting cleanup or automatic role changes.
