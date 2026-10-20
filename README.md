@@ -1,6 +1,6 @@
 # EuLocation（测试版）
 
-面向 **小米 15（dada）/ xiaomi.eu HyperOS 3 OS3.0.307.0.WOCCNXM** 的 KernelSU 可选本地化模块，包含超级小爱和小米钱包。不是定位/GPS 模块，也不是适用于所有 EU ROM 的通用包。
+已验证 **小米 15（dada）/ xiaomi.eu HyperOS 3 OS3.0.307.0.WOCCNXM** 的 KernelSU 可选本地化模块，包含超级小爱和小米钱包。不是定位/GPS 模块，不一定适用于所有 EU ROM 的通用包。
 
 > 当前为预发布测试版。仅在下述机型、ROM 和现有环境中测试；安装前请自行备份，并准备好可用的模块停用/救援方式。支付相关功能未做真实交易验证。
 
