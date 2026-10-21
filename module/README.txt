@@ -1,50 +1,43 @@
-EU307 localization test release / Xiaomi 15 dada / Android 16
-Exact target: xiaomi.eu OS3.0.307.0.WOCCNXM. KernelSU + existing mount metamodule.
+EuLocation v0.4.2 model-unlocked test: HyperOS 3 xiaomi.eu, Android 16, arm64.
+No codename/full-build allowlist. Baseline v0.4.1 + CN Hook 0.6 was tested only
+on Xiaomi 15 dada OS3.0.307.0.WOCCNXM; this revision is host-tested, not yet
+device-regression-tested. Other models/builds are experimental, not certified.
+Hardware, installed-package path/hash and payload-integrity checks remain.
+KernelSU + an existing enabled mount metamodule are required.
 
-Optional bundle menu:
-1. XiaoAI = previously tested original-signed core plus voice wake, one item.
-2. Wallet = original-signed five-component wallet stack, one item.
-For each item: Volume UP installs; Volume DOWN skips. 30-second timeout aborts.
-No choices are silently accepted. Both skipped aborts without changing old modules.
-For explicit authorized ADB deployment only, a strict root-owned 0600 one-time
-options file can select the items instead of hardware keys. It is consumed on
-success. It is parsed as data, never executed/sourced.
+Independent choices: XiaoAI core+wake, and Wallet mode (full/cards/none).
+Volume UP installs XiaoAI, DOWN skips. Then UP installs card services, DOWN skips.
+When card services are selected: UP = full Wallet, DOWN = card-holder only.
+Every prompt times out after 30 seconds and cancels; nothing silently selected.
+Already managed components cannot be removed by skipping; no data deletion UI.
 
-Skipping does NOT uninstall independent components or erase data. This release
-refuses to drop an already bundled component by deselection on update: keep it
-selected, or use an explicitly planned rollback/removal. Failed preflight leaves
-the existing active module(s) untouched. The installer does not disable old
-modules; disable only the selected components' old modules AFTER success and
-before reboot. The current managed ADB migration performs this step separately.
-Retain old modules disabled for rollback. Never enable duplicate payload modules.
+Cards-only retains TSMClient, Nextpay, UPTsm and PaymentService unchanged. On a
+fresh device without MipayWallet it does not extract/mount MipayWallet at all.
+When migrating an existing Wallet installation, its original-signed APK is kept
+mounted to preserve package/data identity, and the main package is disabled for
+user 0. This migration is NOT a physically APK-free installation. No app data,
+card databases, enrollment, grants, NFC/default payment or assistant choices are
+cleared/reset. Full mode restores only the enabled state previously managed by
+this module. For manual installs, the boot service applies enabled state after
+boot completes; controlled ADB migration disables the main app before reboot.
+Package-manager startup failures are retried up to 30 times, every two seconds.
 
-Wallet EU307 adaptation is a compatibility rebuild, NOT a claimed CN307 payload:
-TSMClient/Nextpay/UPTsm/PaymentService originate from CN dada305; MipayWallet is
-the previously verified Xiaomi-signed release. Same 98 binary payload files as
-the working v1.1 stack on this EU307 device. New installer checks EU307, eSE/HCE,
-the existing NFC service and currently installed APK identities, and refuses
-silent downgrade/replacement of data-app updates. Existing ro.se.type and the
-legacy wallet marker property are carried forward byte-identically ONLY when
-Wallet is selected. No user NFC default/payment-role changes are made.
+Restore full mode before uninstalling a migrated data carrier. Disabling/removing
+the module does not itself restore APKs or guarantee Android retains data of a
+missing system package. Keep your own compatible backup; avoid destructive tests.
 
-XiaoAI payload is byte-identical to merged v0.2: same app IDs, original signatures,
-mount paths and native libraries. Wallet and XiaoAI do not replace one another.
-No AIService/AICR/vision/speech/vendor/DSP replacement, global region spoof,
-SELinux/signature override, permission/profile rewrite, ART/cache or data cleanup.
-No voice samples, voiceprint/enrollment, card/account databases, payment keys or
-credentials are included, copied or exported. Do not re-enroll merely to migrate.
+The native Settings entry requires Per-App CN v0.7 with com.android.settings scoped.
+Its narrow hook checks the runtime platform, trusted TSM APK hash and feature bit
+1024, and changes preference availability/title/click. It does not set global CN
+properties, replace Settings.apk, change payment defaults or automate payments.
+Non-Settings hooks in the original CN module remain unchanged.
 
-KernelSU App Profile visibility requirements remain unchanged: android, NFC,
-wallet stack, voiceassist and voicetrigger must see their own mounted APKs.
-Do not grant these apps root or turn off module hiding globally as a shortcut.
+Wallet/card payloads remain byte-identical to v0.3: CN305 components plus the
+previously verified signed MipayWallet release, not claimed CN307 app payloads.
+eID and other wallet-dependent operations may need full Wallet. No real payment,
+card creation/deletion/transfer/recharge or bank identity operation is automated.
+The device owner must confirm UI/card preservation, not infer it from a launch.
 
-Testing is limited to package/payload, UI, service/grant/default preservation,
-existing card visibility, and user-spoken desktop/locked-screen wakeup. It does
-NOT prove bank transactions, secure-element provisioning or long-term power use.
-No real payment, card addition/deletion, bank login or biometric confirmation
-should be automated as an installation test.
-
-Rollback: disable this new module, re-enable the retained old modules for the
-same components, reboot. App data/settings remain. Before removing all assistant
-or wallet providers, choose an appropriate alternative default yourself. No
-automatic re-enable/reset is performed by uninstall. Disable test modules before OTA.
+Retain selected apps' KSU mount visibility. Do not grant these apps root or hide
+modules globally. Do not enable duplicate payload modules. Disable test modules
+before OTA; passing the guards does not prove compatibility on other devices.

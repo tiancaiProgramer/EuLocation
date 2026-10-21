@@ -14,3 +14,11 @@ adb-*.conf
 *backup*/
 *Backup*/
 *.log
+**/.gradle/
+**/build/
+local.properties
+*.keystore
+*.jks
+*.aar
+*.jar
+*.idsig

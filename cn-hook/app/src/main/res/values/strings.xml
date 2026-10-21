@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HyperOS3 Per-App CN</string>
+    <string name="module_description">Per-process CN compatibility for Xiaomi system apps. Default scope: Recorder (com.android.soundrecorder), for app recording. Manually scope Xiaomi Service Framework (com.xiaomi.xmsf) for the tested Super Island prerequisite; it uses a narrow Global/SG push path, not generic CN overrides. Scope Settings (com.android.settings) for the native card-holder entry with compatible TSM backend. Settings requires HyperOS 3 xiaomi.eu / Android 16 arm64 and trusted TSM capability; no codename or exact-build lock. System-app and system-partition gates remain. Ordinary /data apps no-op. Does not hook system_server or change global region, payment defaults or KSU configuration. Other devices remain unverified.</string>
+</resources>

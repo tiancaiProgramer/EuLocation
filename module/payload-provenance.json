@@ -1,5 +1,8 @@
 {
-  "targetBuild": "EU dada OS3.0.307.0.WOCCNXM",
+  "testedBaseline": "Xiaomi 15 dada / EU OS3.0.307.0.WOCCNXM / v0.4.1 + CN Hook 0.6",
+  "runtimePlatform": "HyperOS 3 xiaomi.eu / Android 16 SDK 36 / arm64-v8a",
+  "modelAndExactBuildLocksRemoved": true,
+  "thisRevisionDeviceRegressionTested": false,
   "experimental": true,
   "components": [
     "xiaoai",
@@ -20,5 +23,14 @@
   "userDataOrEnrollmentIncluded": false,
   "noSelectionIsNotRemoval": true,
   "defaultRolesModified": false,
-  "walletPropertiesOnlyWhenWalletSelected": true
+  "walletPropertiesOnlyWhenWalletSelected": true,
+  "installerVersion": "v0.4.2-model-unlocked-test",
+  "walletModes": [
+    "none",
+    "full",
+    "cards"
+  ],
+  "cardMigrationRetainsDisabledWalletApk": true,
+  "requiresSettingsHook": "Per-App CN >=0.7 for model-unlocked Settings entry",
+  "walletEnabledStateManagedInCardsMode": true
 }

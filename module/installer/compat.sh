@@ -1,13 +1,17 @@
+runtime_profile_matches() {
+  # Platform guard, not a device/codename or full-build allowlist.
+  case "$(getprop ro.build.version.incremental)" in OS3.*) ;; *) return 1 ;; esac
+  case "$(getprop ro.product.mod_device)" in *_xiaomieu_global|*_xiaomieu) ;; *) return 1 ;; esac
+  [ "$(getprop ro.build.version.sdk)" = "36" ] || return 1
+  [ "$(getprop ro.product.cpu.abi)" = "arm64-v8a" ] || return 1
+}
+
 check_profile() {
   [ "$BOOTMODE" = "true" ] || abort "! Running Android installation only."
   if [ -z "${KSU_VER_CODE:-}" ] && [ "${KSU:-false}" != "true" ]; then
     abort "! KernelSU required for this tested release."
   fi
-  [ "$(getprop ro.product.device)" = "dada" ] || abort "! Expected Xiaomi 15 dada."
-  [ "$(getprop ro.build.version.incremental)" = "OS3.0.307.0.WOCCNXM" ] || abort "! Exact EU307 build required."
-  [ "$(getprop ro.product.mod_device)" = "dada_xiaomieu_global" ] || abort "! Expected xiaomi.eu dada."
-  [ "$(getprop ro.build.version.sdk)" = "36" ] || abort "! Expected SDK 36."
-  [ "$(getprop ro.product.cpu.abi)" = "arm64-v8a" ] || abort "! Expected arm64-v8a."
+  runtime_profile_matches || abort "! HyperOS 3 xiaomi.eu / Android 16 / arm64-v8a required (other models unverified)."
   [ -d /data/adb/metamodule ] || abort "! Existing mount metamodule required."
   [ ! -f /data/adb/metamodule/disable ] || abort "! Mount metamodule disabled."
   [ ! -f /data/adb/metamodule/remove ] || abort "! Mount metamodule pending removal."
@@ -44,7 +48,9 @@ check_wallet() {
 extract_component() {
   COMPONENT="$1"
   MANIFEST="$MODPATH/reports/$COMPONENT.sha256"
-  unzip -p "$ZIPFILE" "payload/$COMPONENT/payload.sha256" > "$MANIFEST" || abort "! Component manifest missing."
+  ALL_MANIFEST="$MODPATH/reports/$COMPONENT-source.sha256"
+  unzip -p "$ZIPFILE" "payload/$COMPONENT/payload.sha256" > "$ALL_MANIFEST" || abort "! Component manifest missing."
+  : > "$MANIFEST"
   while read -r EXPECTED_HASH REL; do
     case "$REL" in
       *..*|/*|*' '*|'') abort "! Unsafe payload path." ;;
@@ -54,18 +60,46 @@ extract_component() {
       wallet:system/product/app/MITSMClient/*|wallet:system/product/app/MipayWallet/*|wallet:system/product/app/MINextpay/*|wallet:system/product/app/UPTsmService/*|wallet:system/product/app/PaymentService/*|wallet:system.prop) ;;
       *) abort "! Unexpected component payload path." ;;
     esac
+    if [ "$COMPONENT" = "wallet" ] && [ "$WALLET_MODE" = "cards" ] && [ "$KEEP_WALLET_MAIN" = "0" ]; then
+      case "$REL" in system/product/app/MipayWallet/*) continue ;; esac
+    fi
     case "$REL" in
       */*) mkdir -p "$MODPATH/${REL%/*}" ;;
     esac
     unzip -p "$ZIPFILE" "payload/$COMPONENT/$REL" > "$MODPATH/$REL" || abort "! Payload extraction failed."
-  done < "$MANIFEST"
+    printf '%s  %s\n' "$EXPECTED_HASH" "$REL" >> "$MANIFEST"
+  done < "$ALL_MANIFEST"
   (cd "$MODPATH" && sha256sum -c "reports/$COMPONENT.sha256") >&2 || abort "! Component integrity failed."
   cat "$MANIFEST" >> "$MODPATH/payload.sha256"
+}
+
+prepare_wallet_ui_state() {
+  KEEP_WALLET_MAIN=0
+  WALLET_UI_MANAGED=0
+  WALLET_ORIGINAL_ENABLED=0
+  OLD_CONFIG=/data/adb/modules/HyperOS3EU307Optional/component-selection.conf
+  if [ "$WALLET_MODE" != "none" ] && pm path com.mipay.wallet 2>/dev/null | grep -q '^package:'; then
+    KEEP_WALLET_MAIN=1
+    WALLET_ORIGINAL_ENABLED="$(dumpsys package com.mipay.wallet | sed -n 's/.*User 0:.* enabled=\([0-4]\) .*/\1/p' | head -n 1)"
+    case "$WALLET_ORIGINAL_ENABLED" in [0-4]) ;; *) abort "! Cannot determine original Wallet enabled state." ;; esac
+  fi
+  if [ -f "$OLD_CONFIG" ] && grep -q '^WALLET_UI_MANAGED=1$' "$OLD_CONFIG"; then
+    WALLET_ORIGINAL_ENABLED="$(sed -n 's/^WALLET_ORIGINAL_ENABLED=\([0-4]\)$/\1/p' "$OLD_CONFIG")"
+    case "$WALLET_ORIGINAL_ENABLED" in [0-4]) ;; *) abort "! Invalid managed Wallet state." ;; esac
+    WALLET_UI_MANAGED=1
+  fi
+  if [ "$WALLET_MODE" = "cards" ] && [ "$KEEP_WALLET_MAIN" = "1" ]; then
+    WALLET_UI_MANAGED=1
+    ui_print "- Existing Wallet APK retained DISABLED as a data carrier; no data removal."
+  fi
 }
 
 finish_install() {
   set_perm_recursive "$MODPATH" 0 0 0755 0644
   printf 'XIAOAI=%s\nWALLET=%s\n' "$XIAOAI" "$WALLET" > "$MODPATH/component-selection.conf"
+  printf 'WALLET_MODE=%s\nKEEP_WALLET_MAIN=%s\nWALLET_UI_MANAGED=%s\nWALLET_ORIGINAL_ENABLED=%s\n' \
+    "$WALLET_MODE" "$KEEP_WALLET_MAIN" "$WALLET_UI_MANAGED" "$WALLET_ORIGINAL_ENABLED" >> "$MODPATH/component-selection.conf"
+  set_perm "$MODPATH/service.sh" 0 0 0755
   {
     echo "Build=$(getprop ro.build.version.incremental)"
     echo "AssistantBefore=$(settings get secure assistant)"
@@ -74,10 +108,13 @@ finish_install() {
     echo "PaymentDefaultBefore=$(settings get secure nfc_payment_default_component)"
     echo "PaymentForegroundBefore=$(settings get secure nfc_payment_foreground)"
     echo "DataCleanup=none"
-    echo "UserSettingsModified=false"
+    echo "DefaultRolesModified=false"
+    echo "WalletMode=$WALLET_MODE"
+    echo "WalletMainEnabledStateManaged=$WALLET_UI_MANAGED"
     echo "WalletSEPropertyIncluded=$WALLET"
   } > "$MODPATH/reports/install-preflight.txt"
-  ui_print "- Data, enrollment, cards, grants, assistant and NFC choices untouched."
+  ui_print "- No data/enrollment/card cleanup; assistant and NFC defaults untouched."
+  ui_print "- Cards mode manages only Wallet main-app enabled state, not card backends."
   ui_print "- KSU App Profile module visibility is required; not changed globally."
   ui_print "- After success, disable ONLY old modules for selected components:"
   if [ "$XIAOAI" = "1" ]; then

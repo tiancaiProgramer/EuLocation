@@ -1,1 +1,2 @@
-e5f4c01c92a27b145674eba9dde4f913a26cc4158664e91aa3f34c67a1255122  HyperOS3-EU307-Localization-v0.3-Optional.zip
+c467a06f8a5337f76f02a107e1e2f4c4ffe0a8a94ccef85af0923161c91e0d6b  EuLocation-v0.4.2-model-unlocked-test.zip
+7ee5779e5f0a23726842795befa0b366785e5c65bc26b4de162fe631f15038fc  PerAppCN-v0.7-model-unlocked-test.apk

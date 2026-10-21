@@ -1,4 +1,4 @@
-"""Read-only verification of the pinned, tested release; no device access."""
+"""Read-only verification of pinned release artifacts; no device access."""
 import argparse
 import hashlib
 from pathlib import Path, PurePosixPath
@@ -6,7 +6,8 @@ import re
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_SHA256 = "e5f4c01c92a27b145674eba9dde4f913a26cc4158664e91aa3f34c67a1255122"
+EXPECTED_SHA256 = "c467a06f8a5337f76f02a107e1e2f4c4ffe0a8a94ccef85af0923161c91e0d6b"
+EXPECTED_APK_SHA256 = "7ee5779e5f0a23726842795befa0b366785e5c65bc26b4de162fe631f15038fc"
 COMPONENTS = {
     "xiaoai": (109, {"VoiceAssistAndroidT", "VoiceTrigger"}),
     "wallet": (99, {"MITSMClient", "MipayWallet", "MINextpay", "UPTsmService", "PaymentService"}),
@@ -23,15 +24,15 @@ def file_sha256(path):
 
 def verify(path):
     if file_sha256(path) != EXPECTED_SHA256:
-        raise ValueError("Release ZIP SHA-256 differs from the tested artifact")
+        raise ValueError("Release ZIP SHA-256 differs from the published artifact")
     with zipfile.ZipFile(path) as archive:
         names = archive.namelist()
-        if len(names) != 219 or len(set(names)) != len(names):
+        if len(names) != 220 or len(set(names)) != len(names):
             raise ValueError("Unexpected/duplicate archive entries")
         expected = set()
         sources = sorted(p for p in (ROOT / "module").rglob("*") if p.is_file())
-        if len(sources) != 9:
-            raise ValueError("Expected nine public module source files")
+        if len(sources) != 10:
+            raise ValueError("Expected ten public module source files")
         for source in sources:
             name = source.relative_to(ROOT / "module").as_posix()
             if archive.read(name) != source.read_bytes():
@@ -62,14 +63,29 @@ def verify(path):
                     raise ValueError(f"Payload SHA-256 mismatch: {name}")
         if set(names) != expected:
             raise ValueError("Archive has missing or unexpected files")
-    print("PASS: pinned release SHA-256; 9 source files; 208 payload files; 219 ZIP entries")
+    print("PASS: pinned release SHA-256; 10 source files; 208 payload files; 220 ZIP entries")
+
+
+def verify_apk(path):
+    if file_sha256(path) != EXPECTED_APK_SHA256:
+        raise ValueError("CN Hook APK SHA-256 differs from the published artifact")
+    with zipfile.ZipFile(path) as archive:
+        for name in ("java_init.list", "module.prop", "scope.list"):
+            relative = f"META-INF/xposed/{name}"
+            source = ROOT / "cn-hook/app/src/main/resources" / relative
+            if archive.read(relative) != source.read_bytes():
+                raise ValueError(f"CN Hook metadata differs: {relative}")
+    print("PASS: pinned CN Hook APK SHA-256 and Xposed metadata; default scope Recorder only")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("zip", type=Path)
+    parser.add_argument("--apk", type=Path)
     args = parser.parse_args()
     try:
         verify(args.zip)
+        if args.apk:
+            verify_apk(args.apk)
     except (ValueError, OSError, KeyError, zipfile.BadZipFile) as exc:
         parser.exit(1, f"FAIL: {exc}\n")

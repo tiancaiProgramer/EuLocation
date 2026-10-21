@@ -10,26 +10,27 @@ PASS=0
 for PAIR in 11 10 01; do
   EXPECT_X="${PAIR%?}"
   EXPECT_W="${PAIR#?}"
-  printf 'BUNDLE_ID=HyperOS3EU307Optional\nXIAOAI=%s\nWALLET=%s\n' "$EXPECT_X" "$EXPECT_W" > "$TEST_DIR/valid.conf"
+  if [ "$EXPECT_W" = 1 ]; then EXPECT_MODE=full; else EXPECT_MODE=none; fi
+  printf 'BUNDLE_ID=HyperOS3EU307Optional\nXIAOAI=%s\nWALLET_MODE=%s\n' "$EXPECT_X" "$EXPECT_MODE" > "$TEST_DIR/valid.conf"
   parse_options "$TEST_DIR/valid.conf"
-  [ "$XIAOAI$WALLET" = "$PAIR" ]
+  [ "$XIAOAI:$WALLET_MODE" = "$EXPECT_X:$EXPECT_MODE" ]
   PASS=$((PASS+1))
 done
-printf 'BUNDLE_ID=HyperOS3EU307Optional\nXIAOAI=0\nWALLET=0\n' > "$TEST_DIR/empty.conf"
+printf 'BUNDLE_ID=HyperOS3EU307Optional\nXIAOAI=0\nWALLET_MODE=none\n' > "$TEST_DIR/empty.conf"
 if parse_options "$TEST_DIR/empty.conf"; then exit 1; fi
 PASS=$((PASS+1))
-printf 'BUNDLE_ID=HyperOS3EU307Optional\nXIAOAI=1;echo BAD\nWALLET=1\n' > "$TEST_DIR/invalid.conf"
+printf 'BUNDLE_ID=HyperOS3EU307Optional\nXIAOAI=1;echo BAD\nWALLET_MODE=full\n' > "$TEST_DIR/invalid.conf"
 if parse_options "$TEST_DIR/invalid.conf"; then exit 1; fi
 PASS=$((PASS+1))
-printf 'BUNDLE_ID=WRONG\nXIAOAI=1\nWALLET=1\n' > "$TEST_DIR/wrong-id.conf"
+printf 'BUNDLE_ID=WRONG\nXIAOAI=1\nWALLET_MODE=full\n' > "$TEST_DIR/wrong-id.conf"
 if parse_options "$TEST_DIR/wrong-id.conf"; then exit 1; fi
 PASS=$((PASS+1))
 printf 'XIAOAI=1\nWALLET=1\n' > "$TEST_DIR/old-selection.conf"
-if (XIAOAI=0; WALLET=1; preserve_managed_components "$TEST_DIR/old-selection.conf"); then exit 1; fi
+if (XIAOAI=0; WALLET_MODE=cards; preserve_managed_components "$TEST_DIR/old-selection.conf"); then exit 1; fi
 PASS=$((PASS+1))
-if (XIAOAI=1; WALLET=0; preserve_managed_components "$TEST_DIR/old-selection.conf"); then exit 1; fi
+if (XIAOAI=1; WALLET_MODE=none; preserve_managed_components "$TEST_DIR/old-selection.conf"); then exit 1; fi
 PASS=$((PASS+1))
-XIAOAI=1; WALLET=1
+XIAOAI=1; WALLET_MODE=full
 preserve_managed_components "$TEST_DIR/old-selection.conf"
 PASS=$((PASS+1))
 timeout() { shift; "$@"; }
