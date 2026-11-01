@@ -1,2 +1,3 @@
-c467a06f8a5337f76f02a107e1e2f4c4ffe0a8a94ccef85af0923161c91e0d6b  EuLocation-v0.4.2-model-unlocked-test.zip
-7ee5779e5f0a23726842795befa0b366785e5c65bc26b4de162fe631f15038fc  PerAppCN-v0.7-model-unlocked-test.apk
+bc0051b9743a096686bbc1a2b1f6e4200ef5c96b7e52e7f73703d3734b11ce7a  EuLocation-v0.5.0-search-test.zip
+2c5c13e5c7c12791bbc098f81217b4764c83ca326ba37315b6ec3341bac799fe  EUBoost-v0.10.1-browser-fix-test.apk
+9cdd3b81e13712bb1c3125b06f9bb21bf4c13e568cc944ec83cfda71b5ba9e7e  Island-v0.15-native-push-start-test.apk

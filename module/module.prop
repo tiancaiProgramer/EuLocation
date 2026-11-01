@@ -1,6 +1,6 @@
 id=HyperOS3EU307Optional
-name=EuLocation（小爱／完整钱包／仅卡包）测试版
-version=v0.4.2-model-unlocked-test
-versionCode=6
+name=EuLocation（小爱／钱包卡包／搜索）测试版
+version=v0.5.0-search-test
+versionCode=7
 author=Local Xiaomi 15 compatibility test
-description=HyperOS 3 xiaomi.eu Android 16 arm64: XiaoAI plus full Wallet or cards only. Model/full-build locks removed; only Xiaomi 15 EU307 baseline tested. Existing Wallet APK retained disabled for migration. CN Hook v0.7 Settings scope for card entry. No data cleanup or default-role changes.
+description=Defaults: cards only + XiaoAI + Search (auto-detect foldable, manual override). HyperOS 3 xiaomi.eu Android 16 arm64: XiaoAI plus full Wallet or cards only. Model/full-build locks removed; only Xiaomi 15 EU307 baseline tested. Existing Wallet APK retained disabled for migration. CN Hook v0.7 Settings scope for card entry. No data cleanup or default-role changes.

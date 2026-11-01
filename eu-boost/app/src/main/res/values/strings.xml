@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">EU增强</string>
+    <string name="module_description">EU 系统增强：录音机→应用录音；设置→卡包入口（需 EuLocation 后台）；智能助理→出行助手入口和原生后台；安装器→进程内系统应用更新兼容。默认推荐录音机、设置、智能助理和安装器，可按需勾选。其他手动勾选的系统 App 沿用录音机的进程内 CN 区域兼容，专门适配优先。智能助理及安装器使用独立窄适配，不套用通用 CN 伪装、不改全局属性、隐私授权、默认助手或支付设置，不跳过系统签名校验。小米服务框架推送兼容已迁至超级岛 Hook，本模块无需勾选小米服务框架。已验证组件以 APK/能力检查为准，其他版本未保证兼容。</string>
+</resources>

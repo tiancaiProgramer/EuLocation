@@ -72,7 +72,7 @@ def verify_apk(path):
     with zipfile.ZipFile(path) as archive:
         for name in ("java_init.list", "module.prop", "scope.list"):
             relative = f"META-INF/xposed/{name}"
-            source = ROOT / "cn-hook/app/src/main/resources" / relative
+            source = ROOT.parent / "EuPower/app/src/main/resources" / relative
             if archive.read(relative) != source.read_bytes():
                 raise ValueError(f"CN Hook metadata differs: {relative}")
     print("PASS: pinned CN Hook APK SHA-256 and Xposed metadata; default scope Recorder only")

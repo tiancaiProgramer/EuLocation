@@ -1,14 +1,29 @@
-EuLocation v0.4.2 model-unlocked test: HyperOS 3 xiaomi.eu, Android 16, arm64.
+EuLocation v0.5.0 optional-search test: HyperOS 3 xiaomi.eu, Android 16, arm64.
 No codename/full-build allowlist. Baseline v0.4.1 + CN Hook 0.6 was tested only
 on Xiaomi 15 dada OS3.0.307.0.WOCCNXM; this revision is host-tested, not yet
 device-regression-tested. Other models/builds are experimental, not certified.
 Hardware, installed-package path/hash and payload-integrity checks remain.
 KernelSU + an existing enabled mount metamodule are required.
 
-Independent choices: XiaoAI core+wake, and Wallet mode (full/cards/none).
-Volume UP installs XiaoAI, DOWN skips. Then UP installs card services, DOWN skips.
-When card services are selected: UP = full Wallet, DOWN = card-holder only.
-Every prompt times out after 30 seconds and cancels; nothing silently selected.
+Installation starts with UP=use defaults, DOWN=customize.
+Defaults: cards only + XiaoAI core/wake + native Search (automatic variant).
+Custom groups: 1) cards only / wallet App+cards / none; 2) XiaoAI on/off;
+3) Search off / auto / manually choose ordinary phone or foldable.
+Auto uses ro.embedded.fold.type, power_foldable, multi-display flags, then model
+or market names containing Fold/Flip. Otherwise ordinary-phone fallback.
+The detected variant and reason are printed and stored in component-selection.conf.
+Both original-signed APKs are in the ZIP; only the chosen variant is extracted.
+Every prompt times out after 30 seconds and cancels, including defaults confirmation.
+ADB options accept SEARCH_MODE=none|auto|phone|fold as the optional fourth line;
+legacy three-line input keeps Search disabled for backward compatibility.
+Native Search defaults disable hot rankings, app recommendations, promoted hints,
+Xiaomi curated web source, and phone download/game promotions once, preserving
+local app indexing, consent, permissions and unrelated preferences. Later user
+changes are retained. This does not promise every online page is advertising-free.
+Google engine option requires EUBoost v0.10.0 with Search (com.android.quicksearchbox) scoped in LSPosed. Native APKs/signatures and current engine choice stay unchanged.
+Native swipe-up Search entry requires the same EUBoost version with Miui Home scoped; currently guarded to the verified EU307 Home APK.
+Search systemless mounting and foldable use still require device regression tests.
+
 Already managed components cannot be removed by skipping; no data deletion UI.
 
 Cards-only retains TSMClient, Nextpay, UPTsm and PaymentService unchanged. On a

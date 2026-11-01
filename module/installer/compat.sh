@@ -99,6 +99,7 @@ finish_install() {
   printf 'XIAOAI=%s\nWALLET=%s\n' "$XIAOAI" "$WALLET" > "$MODPATH/component-selection.conf"
   printf 'WALLET_MODE=%s\nKEEP_WALLET_MAIN=%s\nWALLET_UI_MANAGED=%s\nWALLET_ORIGINAL_ENABLED=%s\n' \
     "$WALLET_MODE" "$KEEP_WALLET_MAIN" "$WALLET_UI_MANAGED" "$WALLET_ORIGINAL_ENABLED" >> "$MODPATH/component-selection.conf"
+  printf 'SEARCH_MODE=%s\nSEARCH_REQUESTED=%s\nSEARCH_DETECT_REASON=%s\n' "${SEARCH_MODE:-none}" "${SEARCH_REQUESTED:-none}" "${SEARCH_DETECT_REASON:-explicit-selection}" >> "$MODPATH/component-selection.conf"
   set_perm "$MODPATH/service.sh" 0 0 0755
   {
     echo "Build=$(getprop ro.build.version.incremental)"

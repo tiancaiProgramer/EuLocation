@@ -147,7 +147,7 @@ runtime_profile_matches'''
         for marker in ("android.hardware.nfc.ese", "android.hardware.nfc.hce", "check_existing",
                        "vendor.xiaomi.hardware.misys.V3_0", "com.xiaomi.mibrain.speech", "sha256sum -c"):
             self.assertIn(marker, compat)
-        java = (ROOT / "cn-hook/app/src/main/java/com/ux5/hyperos3/perappcn/SettingsCardHolder.java").read_text()
+        java = (ROOT.parent / 'EuPower/app/src/main/java/com/ux5/hyperos3/perappcn/SettingsCardHolder.java').read_text()
         self.assertIn("HASH.equals(hex.toString())", java)
         self.assertIn("& 1024", java)
         self.assertNotIn("ro.product.device", compat + java)

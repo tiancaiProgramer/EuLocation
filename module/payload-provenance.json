@@ -6,7 +6,8 @@
   "experimental": true,
   "components": [
     "xiaoai",
-    "wallet"
+    "wallet",
+    "search"
   ],
   "sourceArchives": [
     {
@@ -32,5 +33,14 @@
   ],
   "cardMigrationRetainsDisabledWalletApk": true,
   "requiresSettingsHook": "Per-App CN >=0.7 for model-unlocked Settings entry",
-  "walletEnabledStateManagedInCardsMode": true
+  "walletEnabledStateManagedInCardsMode": true,
+  "search": {
+    "originalApkSha256": {
+      "phone": "c5c818831537b1edae9e50c8f2fb733068a8aeb9b07bfc2f000271d6f4efbc57",
+      "fold": "f988c9720c97aac9ae7e747879060c7e92cb5eb81c7f414e60373f2fe4c7d422"
+    },
+    "variants": "auto or manual phone/fold",
+    "default": "cards + XiaoAI + Search auto",
+    "tested": "APK phone local app search only; module regression pending"
+  }
 }

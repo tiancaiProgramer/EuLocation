@@ -22,3 +22,13 @@ local.properties
 *.aar
 *.jar
 *.idsig
+/payload-sources/
+/dist/
+
+/research/
+/testing/
+/history/
+**/research/
+**/testing/
+**/history/
+**/deps/

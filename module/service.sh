@@ -10,6 +10,11 @@ while [ "$(getprop sys.boot_completed)" != 1 ] && [ "$WAIT" -lt 180 ]; do
 done
 [ "$(getprop sys.boot_completed)" = 1 ] || exit 0
 [ ! -f "$MODDIR/disable" ] && [ ! -f "$MODDIR/remove" ] || exit 0
+# One-time native Search preferences. Existing user choices remain after setup.
+if [ -f "$MODDIR/installer/search.sh" ]; then
+  . "$MODDIR/installer/search.sh"
+  apply_search_defaults "$MODDIR" || echo "Search defaults deferred/failed; see reports." > "$MODDIR/reports/search-defaults-error.txt"
+fi
 CONFIG="$MODDIR/component-selection.conf"
 MODE="$(grep -E '^WALLET_MODE=(cards|full|none)$' "$CONFIG" | cut -d= -f2)"
 MANAGED="$(sed -n 's/^WALLET_UI_MANAGED=\([01]\)$/\1/p' "$CONFIG")"

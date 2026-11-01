@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HyperOS 3 实时服务超级岛适配</string>
+    <string name="module_description">保留饿了么和滴滴适配。淘宝闪购进入前台时启动其原生 MiPush 服务，每个进程成功请求一次，不轮询或保活，不生成模拟订单。小米服务框架保留与 EU增强 0.9.1 相同的直接返回逻辑，不改写区域。测试版仍需真实订单验证。</string>
+</resources>
