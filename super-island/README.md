@@ -31,4 +31,4 @@ EU增强取消XMSF；其他原有模块勾选保持。该组合已有本轮成�
 
 原始对照与结论修订：`testing/Eleme-Live-20261101`。最新：`v015-build/实测结果.txt`。v0.13未安装，不作为修复版；v0.14单独复制XMSF no-op曾未恢复，不能把它标成完整修复。
 
-临时采集已停止。本版未发布GitHub。手环测试保持暂停，手机上岛不代表手环验证通过。
+临时采集已停止。本版已发布：[GitHub Release](https://github.com/tiancaiProgramer/EuLocation/releases/tag/v0.5.0-eu-suite-test)。手环测试保持暂停，手机上岛不代表手环验证通过。

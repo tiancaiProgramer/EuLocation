@@ -2,7 +2,7 @@
 
 工作区于 2026-11-01 从 `EuLocation/cn-hook` 拆到 `G:\Data\ApkFuture\EuPower`。当前源码在 `app/src/main`，检查在 `tests`，旧 CN/EUBoost 构建及排查记录在 `history`。离线构建入口为 `tools/build_offline.py`，输出到 `dist`，不自动安装或更换签名。已提交的 CN 历史已提取到本目录 `.git`，当前开发改动保持未提交。
 
-由原 CN Hook 原位升级，显示名称改为「EU增强」，内部包名和签名保留，避免丢失既有作用域。此工作区改动尚未发布到 GitHub Releases。
+由原 CN Hook 原位升级，显示名称改为「EU增强」，内部包名和签名保留，避免丢失既有作用域。当前测试版已发布：[GitHub Release](https://github.com/tiancaiProgramer/EuLocation/releases/tag/v0.5.0-eu-suite-test)。
 
 | 按需作用域 | 功能 |
 | --- | --- |
