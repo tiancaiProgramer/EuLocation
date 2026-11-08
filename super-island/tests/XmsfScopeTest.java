@@ -4,7 +4,7 @@ import io.github.libxposed.api.XposedInterface;
 import io.github.libxposed.api.XposedModuleInterface;
 import java.lang.reflect.Proxy;
 
-/** Runs the real module entry points; unexpected app/framework access fails. */
+/** Real callbacks fail open when the host SDK has no hidden Application.attach API. */
 public final class XmsfScopeTest {
     private static int logs;
     private static int checks;
@@ -31,7 +31,7 @@ public final class XmsfScopeTest {
                 "com.xiaomi.xmsf:remote"}) {
             int before = logs;
             module.onModuleLoaded(param(XposedModuleInterface.ModuleLoadedParam.class, process));
-            if (logs != before + 1) throw new AssertionError("Expected one passive entry log");
+            if (logs <= before) throw new AssertionError("Expected scoped entry or unavailable-API diagnostic");
             checks++;
         }
         for (int repeat = 0; repeat < 3; repeat++) {
@@ -42,7 +42,6 @@ public final class XmsfScopeTest {
         if (XmsfCompat.isProcess(null) || XmsfCompat.isProcess("com.xiaomi.xmsfkeeper")
                 || XmsfCompat.isProcess("me.ele")) throw new AssertionError("Unexpected process match");
         checks += 3;
-        System.out.println("XMSF passive scope checks passed: " + checks
-                + "; zero app-info/classloader/region access or hook calls");
+        System.out.println("XMSF callback and unavailable-API fail-open checks passed: " + checks);
     }
 }

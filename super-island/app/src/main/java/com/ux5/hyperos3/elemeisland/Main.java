@@ -23,8 +23,8 @@ import io.github.libxposed.api.XposedModuleInterface;
  * Narrow compatibility adapter for live-service islands on HyperOS 3 Xiaomi.eu.
  *
  * <p>Retains the verified Ele.me route and separate Didi adapter. Owns the
- * same passive XMSF scope path used by EU boost 0.9.1: no app hooks,
- * region overrides or getter observation.</p>
+ * version-gated XMSF China enable compatibility. Device region and push
+ * registration data are preserved.</p>
  *
  * <p>The hook is fail-open and signature-gated. If the verified SDK layout is
  * absent or changes, the original behavior is preserved.</p>
@@ -66,6 +66,7 @@ public final class Main extends XposedModule {
     private volatile boolean didiLifecycleInstalled;
     private volatile String clientPackage = TARGET_PACKAGE;
     private volatile boolean elemeMainProcess;
+    private final DidiDiagnostics didiDiagnostics = new DidiDiagnostics();
     private final DidiAdapter didi = new DidiAdapter(message -> log(Log.INFO, TAG, message));
     private final ElemePushService nativePush = new ElemePushService();
 
@@ -82,8 +83,8 @@ public final class Main extends XposedModule {
         String process = param.getProcessName();
         elemeMainProcess = TARGET_PACKAGE.equals(process);
         if (!param.isSystemServer() && XmsfCompat.isProcess(process)) {
-            // Match EU boost's successful scoped entry: log and return only.
-            log(Log.INFO, TAG, "XMSF passive scope; same no-op path as EU boost 0.9.1");
+            XmsfCompat.install(this);
+            log(Log.INFO, TAG, "XMSF scoped compatibility observer loaded");
             return;
         }
         if (param.isSystemServer() || process == null
@@ -271,8 +272,12 @@ public final class Main extends XposedModule {
             }
             current.setAccessible(true);
             final Method getCurrent = current;
+            deoptimize(create);
+            deoptimize(clear);
             hook(create).setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE).intercept(chain -> {
+                didiDiagnostics.note(this, "create callback entered");
                 Object result = chain.proceed();
+                didiDiagnostics.note(this, "create result=" + Boolean.TRUE.equals(result));
                 try {
                     Object context = contextMethod != null ? contextMethod.invoke(null) : contextField.get(null);
                     if (Boolean.TRUE.equals(result) && context instanceof Context) {
@@ -300,6 +305,7 @@ public final class Main extends XposedModule {
                 }
                 return result;
             });
+            didiDiagnostics.install(this, loader, window, data, profile);
             log(Log.INFO, TAG, "Didi live callback hooks installed; version=" + profile.versionName
                     + "; class=" + profile.windowClass);
             return true;

@@ -39,7 +39,6 @@ check_wallet() {
   pm list features | grep -q '^feature:android.hardware.nfc.hce$' || abort "! HCE capability missing."
   pm path com.android.nfc 2>/dev/null | grep -q '^package:' || abort "! Existing EU NFC service required."
   check_existing com.miui.tsmclient /product/app/MITSMClient/MITSMClient.apk c79df91c96734bcd0085ec19e74e55abce7be55b7a7a8429b18ec73cdb4332c5
-  check_existing com.mipay.wallet /product/app/MipayWallet/MipayWallet.apk ce369489bd4cf5262c0e35403566be2274a06bbeadb265fc8afe2897750db800
   check_existing com.miui.nextpay /product/app/MINextpay/MINextpay.apk 169626141c4f2ae0ce4a53552111e59f935151c49361948d09fbd9a9d341139f
   check_existing com.unionpay.tsmservice.mi /product/app/UPTsmService/UPTsmService.apk ac52313450813ab118bd291013e6094b1db3c86468a5899343b4135b40b80c83
   check_existing com.xiaomi.payment /product/app/PaymentService/PaymentService.apk 2b978506f41450e745dc7044c7086a6693e991d2a47b5f94464aa65994f49bcd
@@ -57,12 +56,9 @@ extract_component() {
     esac
     case "$COMPONENT:$REL" in
       xiaoai:system/product/app/VoiceAssistAndroidT/*|xiaoai:system/product/app/VoiceTrigger/*) ;;
-      wallet:system/product/app/MITSMClient/*|wallet:system/product/app/MipayWallet/*|wallet:system/product/app/MINextpay/*|wallet:system/product/app/UPTsmService/*|wallet:system/product/app/PaymentService/*|wallet:system.prop) ;;
+      wallet:system/product/app/MITSMClient/*|wallet:system/product/app/MINextpay/*|wallet:system/product/app/UPTsmService/*|wallet:system/product/app/PaymentService/*|wallet:system.prop) ;;
       *) abort "! Unexpected component payload path." ;;
     esac
-    if [ "$COMPONENT" = "wallet" ] && [ "$WALLET_MODE" = "cards" ] && [ "$KEEP_WALLET_MAIN" = "0" ]; then
-      case "$REL" in system/product/app/MipayWallet/*) continue ;; esac
-    fi
     case "$REL" in
       */*) mkdir -p "$MODPATH/${REL%/*}" ;;
     esac
@@ -73,25 +69,53 @@ extract_component() {
   cat "$MANIFEST" >> "$MODPATH/payload.sha256"
 }
 
-prepare_wallet_ui_state() {
+prepare_wallet_split() {
+  # The main App is no longer a payload. Card backends have separate package
+  # identities/data. Never uninstall, clear, or change a separately installed App.
   KEEP_WALLET_MAIN=0
   WALLET_UI_MANAGED=0
   WALLET_ORIGINAL_ENABLED=0
-  OLD_CONFIG=/data/adb/modules/HyperOS3EU307Optional/component-selection.conf
-  if [ "$WALLET_MODE" != "none" ] && pm path com.mipay.wallet 2>/dev/null | grep -q '^package:'; then
-    KEEP_WALLET_MAIN=1
-    WALLET_ORIGINAL_ENABLED="$(dumpsys package com.mipay.wallet | sed -n 's/.*User 0:.* enabled=\([0-4]\) .*/\1/p' | head -n 1)"
-    case "$WALLET_ORIGINAL_ENABLED" in [0-4]) ;; *) abort "! Cannot determine original Wallet enabled state." ;; esac
+  OLD_WALLET=/data/adb/modules/HyperOS3EU307Optional/system/product/app/MipayWallet/MipayWallet.apk
+  [ -f "$OLD_WALLET" ] || return 0
+  [ "$WALLET_MODE" = cards ] || abort "! Keep card services selected during wallet split migration."
+  [ "$(sha256sum "$OLD_WALLET" | cut -d ' ' -f1)" = ce369489bd4cf5262c0e35403566be2274a06bbeadb265fc8afe2897750db800 ] || abort "! Unknown legacy Wallet APK; migration refused."
+  WALLET_CURRENT="$(pm path --user 0 com.mipay.wallet 2>/dev/null)"
+  case "$WALLET_CURRENT" in
+    package:/data/app/*) ui_print "- Separate Wallet installation is untouched."; return 0 ;;
+    package:/product/app/MipayWallet/MipayWallet.apk|'') ;;
+    *) abort "! Unexpected Wallet layout; refusing migration." ;;
+  esac
+  [ "$(am get-started-user-state 0 2>/dev/null)" = RUNNING_UNLOCKED ] || abort "! Unlock user 0 before legacy Wallet backup."
+  # Refuse multi-user migration rather than silently lose a second user's App data.
+  for WALLET_USERDIR in /data/user/*/com.mipay.wallet /data/user_de/*/com.mipay.wallet; do
+    [ -d "$WALLET_USERDIR" ] || continue
+    case "$WALLET_USERDIR" in /data/user/0/*|/data/user_de/0/*) ;; *) abort "! Wallet has secondary-user data; back up/migrate separately first." ;; esac
+    [ ! -L "$WALLET_USERDIR" ] || abort "! Wallet data symlink refused."
+  done
+  BACKUP_ROOT=/data/adb/eulocation-backups
+  [ ! -L "$BACKUP_ROOT" ] || abort "! Unsafe backup directory."
+  mkdir -p "$BACKUP_ROOT" || abort "! Cannot create private backup root."
+  chmod 0700 "$BACKUP_ROOT" || abort "! Cannot protect backup root."
+  WALLET_BACKUP="$BACKUP_ROOT/wallet-main-$(date +%Y%m%d-%H%M%S)-$$"
+  mkdir "$WALLET_BACKUP" && chmod 0700 "$WALLET_BACKUP" || abort "! Cannot create private Wallet backup."
+  cp "$OLD_WALLET" "$WALLET_BACKUP/MipayWallet.apk" || abort "! Wallet APK backup failed."
+  [ "$(sha256sum "$WALLET_BACKUP/MipayWallet.apk" | cut -d ' ' -f1)" = ce369489bd4cf5262c0e35403566be2274a06bbeadb265fc8afe2897750db800 ] || abort "! Wallet APK backup integrity failed."
+  WALLET_DATA_PATHS=""
+  for WALLET_DATA in user/0/com.mipay.wallet user_de/0/com.mipay.wallet; do
+    [ ! -d "/data/$WALLET_DATA" ] || WALLET_DATA_PATHS="$WALLET_DATA_PATHS $WALLET_DATA"
+  done
+  if [ -n "$WALLET_CURRENT" ]; then
+    WALLET_ENABLED="$(dumpsys package com.mipay.wallet | sed -n 's/.*User 0:.* enabled=\([0-4]\) .*/\1/p' | head -n1)"
+    [ "$WALLET_ENABLED" = 3 ] || abort "! Disable legacy Wallet main App before migration; card services stay enabled."
   fi
-  if [ -f "$OLD_CONFIG" ] && grep -q '^WALLET_UI_MANAGED=1$' "$OLD_CONFIG"; then
-    WALLET_ORIGINAL_ENABLED="$(sed -n 's/^WALLET_ORIGINAL_ENABLED=\([0-4]\)$/\1/p' "$OLD_CONFIG")"
-    case "$WALLET_ORIGINAL_ENABLED" in [0-4]) ;; *) abort "! Invalid managed Wallet state." ;; esac
-    WALLET_UI_MANAGED=1
+  if [ -n "$WALLET_DATA_PATHS" ]; then
+    (cd /data && tar -czf "$WALLET_BACKUP/wallet-main-data.tar.gz" $WALLET_DATA_PATHS) || abort "! Wallet private-data backup failed."
+    tar -tzf "$WALLET_BACKUP/wallet-main-data.tar.gz" >/dev/null || abort "! Wallet backup is unreadable."
   fi
-  if [ "$WALLET_MODE" = "cards" ] && [ "$KEEP_WALLET_MAIN" = "1" ]; then
-    WALLET_UI_MANAGED=1
-    ui_print "- Existing Wallet APK retained DISABLED as a data carrier; no data removal."
-  fi
+  chmod 0600 "$WALLET_BACKUP"/* || abort "! Cannot protect Wallet backup."
+  ui_print "- Legacy Wallet main APK/data backed up privately: $WALLET_BACKUP"
+  ui_print "- Main App leaves system overlay at reboot; Android may remove its active data."
+  ui_print "- Card backends, card data and settings are not removed."
 }
 
 finish_install() {
@@ -108,14 +132,15 @@ finish_install() {
     echo "VoiceRecognitionBefore=$(settings get secure voice_recognition_service)"
     echo "PaymentDefaultBefore=$(settings get secure nfc_payment_default_component)"
     echo "PaymentForegroundBefore=$(settings get secure nfc_payment_foreground)"
-    echo "DataCleanup=none"
+    echo "ModuleDataCleanup=none"
+    echo "LegacyWalletMain=private backup then overlay removal; Android may clean its data"
     echo "DefaultRolesModified=false"
     echo "WalletMode=$WALLET_MODE"
     echo "WalletMainEnabledStateManaged=$WALLET_UI_MANAGED"
     echo "WalletSEPropertyIncluded=$WALLET"
   } > "$MODPATH/reports/install-preflight.txt"
-  ui_print "- No data/enrollment/card cleanup; assistant and NFC defaults untouched."
-  ui_print "- Cards mode manages only Wallet main-app enabled state, not card backends."
+  ui_print "- No card/backend/enrollment cleanup; assistant and NFC defaults untouched."
+  ui_print "- Wallet main App is a separate optional APK; no boot-time enable/disable policy."
   ui_print "- KSU App Profile module visibility is required; not changed globally."
   ui_print "- After success, disable ONLY old modules for selected components:"
   if [ "$XIAOAI" = "1" ]; then

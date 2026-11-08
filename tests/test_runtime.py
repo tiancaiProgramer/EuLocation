@@ -15,54 +15,61 @@ def shell(script, *args):
     return subprocess.run([BASH, "-c", script, "test", *map(str, args)], capture_output=True, text=True)
 
 class Modes(unittest.TestCase):
-    def test_service_retries_transient_package_manager_failure(self):
+    def test_wallet_split_migration_guards_and_private_backup(self):
+        pinned = 'ce369489bd4cf5262c0e35403566be2274a06bbeadb265fc8afe2897750db800'
+        for case in ('backup', 'locked', 'enabled', 'secondary-user', 'independent', 'unknown-apk'):
+            with self.subTest(case=case), tempfile.TemporaryDirectory(dir=ROOT) as temp:
+                folder = Path(temp)
+                data = folder / 'data'
+                old = data / 'adb/modules/HyperOS3EU307Optional/system/product/app/MipayWallet/MipayWallet.apk'
+                old.parent.mkdir(parents=True)
+                old.write_bytes(b'test-APK-not-published')
+                for tree in ('user', 'user_de'):
+                    source = data / tree / '0/com.mipay.wallet'
+                    source.mkdir(parents=True)
+                    (source / 'settings.txt').write_text('preserve-test-settings')
+                if case == 'secondary-user':
+                    (data / 'user/10/com.mipay.wallet').mkdir(parents=True)
+                script = folder / 'compat.sh'
+                script.write_text((ROOT / 'module/installer/compat.sh').read_text().replace('/data/', data.as_posix() + '/').replace('cd /data ', 'cd "' + data.as_posix() + '" '), newline='\n')
+                command = '''abort() { echo "$*" >&2; exit 97; }; ui_print() { :; }
+. "$1"; CASE="$2"; PINNED="$3"; DATA_ROOT="$4"; WALLET_MODE=cards
+am() { [ "$CASE" = locked ] && echo RUNNING_LOCKED || echo RUNNING_UNLOCKED; }
+pm() { [ "$CASE" = independent ] && echo "package:$DATA_ROOT/app/test/base.apk" || echo package:/product/app/MipayWallet/MipayWallet.apk; }
+dumpsys() { [ "$CASE" = enabled ] && echo 'User 0: enabled=0 test' || echo 'User 0: enabled=3 test'; }
+sha256sum() { [ "$CASE" = unknown-apk ] && echo 'wrong-hash file' || echo "$PINNED file"; }
+# GNU tar on Windows treats G: as an scp host without --force-local.
+tar() { command tar --force-local "$@"; }
+prepare_wallet_split
+'''
+                result = shell(command, script.as_posix(), case, pinned, data.as_posix())
+                self.assertEqual(result.returncode == 0, case in ('backup', 'independent'), result.stderr)
+                archives = list((data / 'adb/eulocation-backups').glob('*/wallet-main-data.tar.gz'))
+                if case == 'backup':
+                    self.assertEqual(len(archives), 1)
+                    import tarfile
+                    with tarfile.open(archives[0]) as archive:
+                        self.assertEqual(archive.extractfile('user/0/com.mipay.wallet/settings.txt').read(), b'preserve-test-settings')
+                    self.assertTrue((archives[0].parent / 'MipayWallet.apk').exists())
+                else:
+                    self.assertFalse(archives)
+                self.assertTrue((data / 'user/0/com.mipay.wallet/settings.txt').exists())
+
+    def test_service_never_manages_wallet_even_with_legacy_config(self):
         with tempfile.TemporaryDirectory(dir=ROOT) as temp:
             folder = Path(temp)
             (folder / "reports").mkdir()
-            script = folder / "service.sh"
-            shutil.copyfile(ROOT / "module/service.sh", script)
             (folder / "installer").mkdir()
+            shutil.copyfile(ROOT / "module/service.sh", folder / "service.sh")
             shutil.copyfile(ROOT / "module/installer/compat.sh", folder / "installer/compat.sh")
             (folder / "component-selection.conf").write_text("WALLET_MODE=cards\nWALLET_UI_MANAGED=1\nWALLET_ORIGINAL_ENABLED=0\n")
-            counter = folder / "attempts.txt"
             command = '''getprop() {
-  case "$1" in ro.product.device) echo other_device;; ro.product.mod_device) echo other_device_xiaomieu_global;; ro.build.version.sdk) echo 36;; ro.product.cpu.abi) echo arm64-v8a;; ro.build.version.incremental) echo OS3.0.1.0.OTHER;; sys.boot_completed) echo 1;; esac
-}; sleep() { :; }; pm() {
-  if [ "$1" = path ]; then echo package:/product/app/MipayWallet/MipayWallet.apk; return 0; fi
-  N=0; [ ! -f "$PM_LOG" ] || N=$(cat "$PM_LOG"); N=$((N+1)); printf '%s' "$N" > "$PM_LOG"
-  [ "$N" -gt 1 ]
-}; export -f getprop pm sleep; export PM_LOG="$2"; bash "$1"
+  case "$1" in ro.product.mod_device) echo dada_xiaomieu_global;; ro.build.version.sdk) echo 36;; ro.product.cpu.abi) echo arm64-v8a;; ro.build.version.incremental) echo OS3.0.307.0.WOCCNXM;; sys.boot_completed) echo 1;; esac
+}; pm() { echo unexpected-package-manager-call >&2; return 91; }; export -f getprop pm; bash "$1"
 '''
-            result = shell(command, script.as_posix(), counter.as_posix())
+            result = shell(command, (folder / "service.sh").as_posix())
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(counter.read_text(), "2")
-            self.assertIn("Attempts=2", (folder / "reports/wallet-ui-service.txt").read_text())
-
-    def test_service_enabled_state_roundtrip(self):
-        for mode, original, action in [("cards", 0, "disable-user"), ("full", 0, "default-state"),
-                ("full", 1, "enable"), ("full", 2, "disable"), ("full", 3, "disable-user"),
-                ("full", 4, "disable-until-used")]:
-            with self.subTest(mode=mode, original=original), tempfile.TemporaryDirectory(dir=ROOT) as temp:
-                folder = Path(temp)
-                (folder / "reports").mkdir()
-                script = folder / "service.sh"
-                shutil.copyfile(ROOT / "module/service.sh", script)
-                (folder / "installer").mkdir()
-                shutil.copyfile(ROOT / "module/installer/compat.sh", folder / "installer/compat.sh")
-                config = folder / "component-selection.conf"
-                config.write_text(f"WALLET_MODE={mode}\nWALLET_UI_MANAGED=1\nWALLET_ORIGINAL_ENABLED={original}\n")
-                record = folder / "calls.txt"
-                command = '''getprop() {
-  case "$1" in ro.product.device) echo other_device;; ro.product.mod_device) echo other_device_xiaomieu_global;; ro.build.version.sdk) echo 36;; ro.product.cpu.abi) echo arm64-v8a;; ro.build.version.incremental) echo OS3.0.1.0.OTHER;; sys.boot_completed) echo 1;; esac
-}; pm() {
-  if [ "$1" = path ]; then echo package:/product/app/MipayWallet/MipayWallet.apk
-  else printf '%s\\n' "$*" > "$PM_LOG"; fi
-}; export -f getprop pm; export PM_LOG="$2"; bash "$1"
-'''
-                result = shell(command, script.as_posix(), record.as_posix())
-                self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertEqual(record.read_text().strip(), f"{action} --user 0 com.mipay.wallet")
-                self.assertIn(f"WALLET_UI_MANAGED={0 if mode == 'full' else 1}", config.read_text())
+            self.assertNotIn("unexpected-package-manager-call", result.stderr)
 
     def test_selection_matrix(self):
         with tempfile.TemporaryDirectory(dir=ROOT) as temp:
@@ -72,7 +79,7 @@ class Modes(unittest.TestCase):
                     with self.subTest(xiaoai=xiaoai, mode=mode):
                         config.write_text(f"BUNDLE_ID=HyperOS3EU307Optional\nXIAOAI={xiaoai}\nWALLET_MODE={mode}\n")
                         result = shell('. "$1"; parse_options "$2"', SELECT, config.as_posix())
-                        self.assertEqual(result.returncode == 0, (xiaoai, mode) != (0, "none"), result.stderr)
+                        self.assertEqual(result.returncode == 0, mode != "full" and (xiaoai, mode) != (0, "none"), result.stderr)
 
     def test_bad_options(self):
         cases = ["BUNDLE_ID=WRONG\nXIAOAI=1\nWALLET_MODE=cards\n",
@@ -112,8 +119,8 @@ KEY="$2"; select_component test; printf '%s' "$CHOICE"
         with zipfile.ZipFile(os.environ["RELEASE_ZIP"]) as new, \
              zipfile.ZipFile(os.environ["PAYLOAD_SOURCE_ZIP"]) as old:
             for name in old.namelist():
-                if name.startswith("payload/"): self.assertEqual(new.read(name), old.read(name), name)
-            for component, count in (("xiaoai", 109), ("wallet", 99)):
+                if name.startswith("payload/") and "MipayWallet/" not in name and name != "payload/wallet/payload.sha256": self.assertEqual(new.read(name), old.read(name), name)
+            for component, count in (("xiaoai", 109), ("wallet", 14)):
                 rows = new.read(f"payload/{component}/payload.sha256").decode().splitlines()
                 self.assertEqual(len(rows), count)
                 for row in rows:

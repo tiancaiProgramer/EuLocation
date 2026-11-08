@@ -1,4 +1,4 @@
-"""Build pinned XiaoAI/wallet payloads plus original signed phone/fold Search APKs."""
+"""Build card backends/XiaoAI/Search; split the original wallet APK into dist."""
 import argparse
 import hashlib
 from pathlib import Path
@@ -26,7 +26,19 @@ def main():
     files = {p.relative_to(ROOT / "module").as_posix(): p.read_bytes()
              for p in (ROOT / "module").rglob("*") if p.is_file()}
     with zipfile.ZipFile(args.source_zip) as source:
-        files.update({n: source.read(n) for n in source.namelist() if n.startswith("payload/")})
+        wallet_prefix = "payload/wallet/system/product/app/MipayWallet/"
+        wallet_apk = source.read(wallet_prefix + "MipayWallet.apk")
+        if hashlib.sha256(wallet_apk).hexdigest() != "ce369489bd4cf5262c0e35403566be2274a06bbeadb265fc8afe2897750db800":
+            raise ValueError("Original signed wallet APK changed")
+        files.update({n: source.read(n) for n in source.namelist()
+                      if n.startswith("payload/") and not n.startswith(wallet_prefix)})
+    # Regenerate the manifest; no excluded APK or duplicate native library can be
+    # accepted by the new installer's wallet allowlist.
+    files["payload/wallet/payload.sha256"] = "".join(
+        f"{hashlib.sha256(data).hexdigest()}  {name[len('payload/wallet/'):] }\n"
+        for name, data in sorted(files.items())
+        if name.startswith("payload/wallet/") and name != "payload/wallet/payload.sha256"
+    ).encode("ascii")
     search_hashes = {
         "phone": "c5c818831537b1edae9e50c8f2fb733068a8aeb9b07bfc2f000271d6f4efbc57",
         "fold": "f988c9720c97aac9ae7e747879060c7e92cb5eb81c7f414e60373f2fe4c7d422",
@@ -67,6 +79,10 @@ def main():
                 if prohibited in data:
                     raise ValueError(f"Destructive/default command in {name}")
     args.output_zip.parent.mkdir(parents=True, exist_ok=True)
+    separate = args.output_zip.parent / "MiWallet-6.111.0.5701.2736-original.apk"
+    if separate.exists() and separate.read_bytes() != wallet_apk:
+        raise ValueError("Refusing to overwrite a different standalone wallet APK")
+    separate.write_bytes(wallet_apk)
     with zipfile.ZipFile(args.output_zip, "x", zipfile.ZIP_DEFLATED, compresslevel=6) as target:
         for name, data in sorted(files.items()):
             entry = zipfile.ZipInfo(name, (2026, 10, 22, 0, 0, 0))

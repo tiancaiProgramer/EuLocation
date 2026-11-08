@@ -1,58 +1,28 @@
-EuLocation v0.5.0 optional-search test: HyperOS 3 xiaomi.eu, Android 16, arm64.
-No codename/full-build allowlist. Baseline v0.4.1 + CN Hook 0.6 was tested only
-on Xiaomi 15 dada OS3.0.307.0.WOCCNXM; this revision is host-tested, not yet
-device-regression-tested. Other models/builds are experimental, not certified.
-Hardware, installed-package path/hash and payload-integrity checks remain.
-KernelSU + an existing enabled mount metamodule are required.
+EuLocation v0.6.0 slim test
+Test baseline: Xiaomi 15 dada / xiaomi.eu OS3.0.307.0.WOCCNXM / Android 16 arm64,
+KernelSU + enabled mount metamodule. Other models/builds unverified.
 
-Installation starts with UP=use defaults, DOWN=customize.
-Defaults: cards only + XiaoAI core/wake + native Search (automatic variant).
-Custom groups: 1) cards only / wallet App+cards / none; 2) XiaoAI on/off;
-3) Search off / auto / manually choose ordinary phone or foldable.
-Auto uses ro.embedded.fold.type, power_foldable, multi-display flags, then model
-or market names containing Fold/Flip. Otherwise ordinary-phone fallback.
-The detected variant and reason are printed and stored in component-selection.conf.
-Both original-signed APKs are in the ZIP; only the chosen variant is extracted.
-Every prompt times out after 30 seconds and cancels, including defaults confirmation.
-ADB options accept SEARCH_MODE=none|auto|phone|fold as the optional fourth line;
-legacy three-line input keeps Search disabled for backward compatibility.
-Native Search defaults disable hot rankings, app recommendations, promoted hints,
-Xiaomi curated web source, and phone download/game promotions once, preserving
-local app indexing, consent, permissions and unrelated preferences. Later user
-changes are retained. This does not promise every online page is advertising-free.
-Google engine option requires EUBoost v0.10.0 with Search (com.android.quicksearchbox) scoped in LSPosed. Native APKs/signatures and current engine choice stay unchanged.
-Native swipe-up Search entry requires the same EUBoost version with Miui Home scoped; currently guarded to the verified EU307 Home APK.
-Search systemless mounting and foldable use still require device regression tests.
+Three independent selections, all default on:
+1. Card backends, without the Wallet main App or its 84 duplicate native libraries.
+2. XiaoAI core + voice wake.
+3. Native Search: auto-detect phone/fold, with manual override.
+The unchanged signed Wallet APK is a separate optional download. Do not install
+it for Settings card access alone. EUBoost Settings scope supplies the card entry.
+No boot-time Wallet enable/disable policy.
 
-Already managed components cannot be removed by skipping; no data deletion UI.
+Legacy upgrade: first disable the old module-owned Wallet main App. Its original
+APK and main-App data are privately archived under /data/adb/eulocation-backups
+(root-only), then the old Wallet overlay disappears at reboot. Android may remove
+that main App active data. Card backend data/settings, XiaoAI enrollment, Search
+preferences and assistant/NFC defaults are not cleared. These private archives
+are rollback material, not portable payment-card backups. Secondary-user Wallet
+data or an unknown legacy APK cancels migration. Separate data-app Wallet is
+untouched. Deselecting an existing managed component cancels instead of removing it.
 
-Cards-only retains TSMClient, Nextpay, UPTsm and PaymentService unchanged. On a
-fresh device without MipayWallet it does not extract/mount MipayWallet at all.
-When migrating an existing Wallet installation, its original-signed APK is kept
-mounted to preserve package/data identity, and the main package is disabled for
-user 0. This migration is NOT a physically APK-free installation. No app data,
-card databases, enrollment, grants, NFC/default payment or assistant choices are
-cleared/reset. Full mode restores only the enabled state previously managed by
-this module. For manual installs, the boot service applies enabled state after
-boot completes; controlled ADB migration disables the main app before reboot.
-Package-manager startup failures are retried up to 30 times, every two seconds.
-
-Restore full mode before uninstalling a migrated data carrier. Disabling/removing
-the module does not itself restore APKs or guarantee Android retains data of a
-missing system package. Keep your own compatible backup; avoid destructive tests.
-
-The native Settings entry requires Per-App CN v0.7 with com.android.settings scoped.
-Its narrow hook checks the runtime platform, trusted TSM APK hash and feature bit
-1024, and changes preference availability/title/click. It does not set global CN
-properties, replace Settings.apk, change payment defaults or automate payments.
-Non-Settings hooks in the original CN module remain unchanged.
-
-Wallet/card payloads remain byte-identical to v0.3: CN305 components plus the
-previously verified signed MipayWallet release, not claimed CN307 app payloads.
-eID and other wallet-dependent operations may need full Wallet. No real payment,
-card creation/deletion/transfer/recharge or bank identity operation is automated.
-The device owner must confirm UI/card preservation, not infer it from a launch.
-
-Retain selected apps' KSU mount visibility. Do not grant these apps root or hide
-modules globally. Do not enable duplicate payload modules. Disable test modules
-before OTA; passing the guards does not prove compatibility on other devices.
+Original signed phone/fold Search APKs, one variant extracted. Initial native
+preference defaults reduce recommendations once; user choices are retained.
+Fold Search is not device-tested on an EU foldable. EUBoost supplies desktop swipe,
+Google engine and current default-browser compatibility.
+No payments, card creation/removal or enrollment is part of installation tests.
+Keep a working old ZIP and private backups. Use named release assets, not GitHub
+Source code ZIP. Hardware/platform/payload hash guards remain.

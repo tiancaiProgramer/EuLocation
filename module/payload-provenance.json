@@ -25,15 +25,14 @@
   "noSelectionIsNotRemoval": true,
   "defaultRolesModified": false,
   "walletPropertiesOnlyWhenWalletSelected": true,
-  "installerVersion": "v0.4.2-model-unlocked-test",
+  "installerVersion": "v0.6.0-slim-test",
   "walletModes": [
     "none",
-    "full",
     "cards"
   ],
-  "cardMigrationRetainsDisabledWalletApk": true,
+  "cardMigrationRetainsDisabledWalletApk": false,
   "requiresSettingsHook": "Per-App CN >=0.7 for model-unlocked Settings entry",
-  "walletEnabledStateManagedInCardsMode": true,
+  "walletEnabledStateManagedInCardsMode": false,
   "search": {
     "originalApkSha256": {
       "phone": "c5c818831537b1edae9e50c8f2fb733068a8aeb9b07bfc2f000271d6f4efbc57",
@@ -42,5 +41,8 @@
     "variants": "auto or manual phone/fold",
     "default": "cards + XiaoAI + Search auto",
     "tested": "APK phone local app search only; module regression pending"
-  }
+  },
+  "walletMainSeparate": true,
+  "walletExternalLibrariesRemoved": 84,
+  "legacyMainAppData": "Private archive before legacy overlay removal; Android may clean the main App active data. Card backends untouched."
 }

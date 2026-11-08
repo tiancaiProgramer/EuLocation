@@ -5,7 +5,7 @@ parse_options() {
   case "$OPTION_LINES" in 3|4) ;; *) return 1 ;; esac
   [ "$(grep -c '^BUNDLE_ID=HyperOS3EU307Optional$' "$1")" = "1" ] || return 1
   [ "$(grep -c '^XIAOAI=[01]$' "$1")" = "1" ] || return 1
-  [ "$(grep -Ec '^WALLET_MODE=(none|full|cards)$' "$1")" = "1" ] || return 1
+  [ "$(grep -Ec '^WALLET_MODE=(none|cards)$' "$1")" = "1" ] || return 1
   XIAOAI="$(sed -n 's/^XIAOAI=\([01]\)$/\1/p' "$1")"
   WALLET_MODE="$(sed -n 's/^WALLET_MODE=//p' "$1")"
   SEARCH_MODE=none

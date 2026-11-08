@@ -32,6 +32,18 @@ public final class DidiPolicyTest {
         check(!DidiPolicy.notificationKey(10, "tag").equals(DidiPolicy.notificationKey(11, "tag")), "distinct ids");
         check(!DidiPolicy.notificationKey(10, "tag").equals(DidiPolicy.notificationKey(10, "other")), "distinct tags");
         check(DidiPolicy.notificationKey(10, null).equals(DidiPolicy.notificationKey(10, "")), "nullable tag");
+        check(DidiPolicy.isRide("Didi_Notify_Live", "滴滴出行", "待付款"), "live payment pending");
+        check(DidiPolicy.isRide("default", "行程结束", "请支付本次车费"), "finished trip still pending fare");
+        check(DidiPolicy.isRide("default", "滴滴出行", "行程已完成，待支付"), "pending overrides finished stage");
+        check(DidiPolicy.isRide("default", "Fare due", "Ride completed, payment pending"), "english fare pending");
+        check(!DidiPolicy.isRide("default", "会员订单", "待付款"), "unrelated pending order");
+        check(!DidiPolicy.isRide("didi_chat", "行程待付款", "请支付车费"), "pending chat excluded");
+        check(!DidiPolicy.isRide("Didi_Notify_Live", "待支付车费", "支付成功"), "paid supersedes pending");
+        check(!DidiPolicy.isRide("Didi_Notify_Live", "待付款", "订单已取消"), "cancel supersedes pending");
+        check(!DidiPolicy.isRide("Didi_Notify_Live", "车费待支付", "领券享优惠"), "pending marketing excluded");
+        check(!DidiPolicy.isRide("default", "电子发票", "行程待支付"), "pending invoice excluded");
+        check(!DidiPolicy.isTerminal("行程结束，请支付车费"), "payment stage remains active");
+        check(DidiPolicy.isTerminal("行程结束，已支付车费"), "paid stage remains terminal");
         System.out.println("PASS " + checks + " Didi policy cases");
     }
 }

@@ -1,7 +1,7 @@
 SKIPUNZIP=1
 ASH_STANDALONE=1
 REPLACE=""
-ui_print "[EuLocation v0.5.0 optional-search test]"
+ui_print "[EuLocation v0.6.0 slim-wallet test]"
 ui_print "Other models/builds are NOT device-tested. Payload/hardware guards remain."
 unzip -o "$ZIPFILE" module.prop README.txt uninstall.sh service.sh 'installer/*' payload-provenance.json -d "$MODPATH" >&2 || abort "! Installer extraction failed."
 . "$MODPATH/installer/selection.sh"
@@ -23,11 +23,10 @@ else
   if [ "$CHOICE" = 1 ]; then
     recommended_selection
   else
-    select_component "1/3: Wallet/card services" "UP=install; DOWN=skip"
+    select_component "1/3: Card services (Wallet main App is a separate download)" "UP=install; DOWN=skip"
     WALLET_MODE=none
     if [ "$CHOICE" = 1 ]; then
-      select_component "Wallet mode" "UP=cards only (default); DOWN=wallet App + cards"
-      if [ "$CHOICE" = 1 ]; then WALLET_MODE=cards; else WALLET_MODE=full; fi
+      WALLET_MODE=cards
     fi
     select_component "2/3: XiaoAI (core + voice wake)"
     XIAOAI="$CHOICE"
@@ -53,7 +52,7 @@ preserve_managed_components /data/adb/modules/HyperOS3EU307Optional/component-se
 [ "$XIAOAI" = "0" ] || check_xiaoai
 [ "$WALLET" = "0" ] || check_wallet
 [ "$SEARCH_MODE" = none ] || check_search
-prepare_wallet_ui_state
+prepare_wallet_split
 mkdir -p "$MODPATH/reports"
 : > "$MODPATH/payload.sha256"
 [ "$XIAOAI" = "0" ] || extract_component xiaoai

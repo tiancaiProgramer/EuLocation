@@ -14,6 +14,10 @@ final class DidiPolicy {
         if (isTerminal(value)) return false;
         String channelName = safe(channel).toLowerCase(Locale.ROOT);
         if (contains(channelName, "chat", "keepalive", "voip", "foreground")) return false;
+        // A finished ride can still have a real payment-pending activity. Ordinary
+        // channels require explicit ride/fare context to avoid wallet/top-up prompts.
+        if (isPaymentPending(value) && (LIVE_CHANNEL.equals(channel)
+                || contains(value, "车费", "行程", "乘车", "打车", "ride", "trip", "fare"))) return true;
         // The inspected live channel is reserved for real-time activities.
         if (LIVE_CHANNEL.equals(channel)) return true;
         return contains(value, "司机已接单", "司机已到达", "司机即将到达", "司机正在赶来", "司机正在前往",
@@ -25,9 +29,18 @@ final class DidiPolicy {
 
     static boolean isTerminal(String value) {
         value = safe(value).toLowerCase(Locale.ROOT);
-        return contains(value, "行程已结束", "行程结束", "行程已完成", "行程取消", "订单已取消", "订单取消",
-                "订单已完成", "取消订单", "取消成功", "支付成功", "付款成功", "待支付", "请支付", "待评价", "电子发票",
-                "trip completed", "ride completed", "ride cancelled", "ride canceled", "payment successful");
+        // Explicit cancellation/payment confirmation takes precedence over stale text.
+        if (contains(value, "行程取消", "订单已取消", "订单取消", "取消订单", "取消成功",
+                "支付成功", "付款成功", "已付款", "已支付", "待评价", "电子发票",
+                "ride cancelled", "ride canceled", "payment successful", "payment completed")) return true;
+        if (isPaymentPending(value)) return false;
+        return contains(value, "行程已结束", "行程结束", "行程已完成", "订单已完成",
+                "trip completed", "ride completed");
+    }
+
+    private static boolean isPaymentPending(String value) {
+        return contains(value, "待付款", "待支付", "请支付", "支付车费", "去支付", "待付车费",
+                "payment pending", "awaiting payment", "fare due");
     }
 
     static String notificationKey(int id, String tag) {

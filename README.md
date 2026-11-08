@@ -1,86 +1,57 @@
 # EuLocation · HyperOS 3 EU 增强测试套件
 
-本仓库提供三个独立文件，按需安装。**实机基线：小米 15 / dada，xiaomi.eu HyperOS 3 OS3.0.307.0.WOCCNXM，Android 16 / arm64，KernelSU + 已启用的挂载元模块、兼容 libxposed API 102 的 LSPosed。** 不是 GPS/定位模块，也不代表其它 EU 版本或机型已实测。
+实机基线：**小米15（dada）／xiaomi.eu HyperOS 3 OS3.0.307.0.WOCCNXM／Android 16 arm64**，KernelSU＋已启用的挂载元模块、兼容 libxposed API 102 的 LSPosed。其它机型和 EU 版本未实测。本项目不是定位模块。
 
-[下载最新测试版](https://github.com/tiancaiProgramer/EuLocation/releases/tag/v0.5.0-eu-suite-test) · [所有 Releases](https://github.com/tiancaiProgramer/EuLocation/releases)
+[下载测试版](https://github.com/tiancaiProgramer/EuLocation/releases/tag/v0.6.0-slim-suite-test) · [全部 Releases](https://github.com/tiancaiProgramer/EuLocation/releases)
 
-| 下载文件 | 类型 | 用途 |
+| 文件 | 安装方式 | 用途 |
 | --- | --- | --- |
-| `EuLocation-v0.5.0-search-test.zip` | KernelSU 刷入包 | 安装超级小爱、完整钱包／仅卡包、普通／折叠版原生搜索，可分别选择 |
-| `EUBoost-v0.10.1-browser-fix-test.apk` | LSPosed：EU增强（原 CN Hook） | 录音机、设置卡包、负一屏、系统应用安装兼容，以及桌面搜索和 Google 引擎适配 |
-| `Island-v0.15-native-push-start-test.apk` | LSPosed：实时服务超级岛适配 | 淘宝闪购／饿了么、滴滴通知及系统界面焦点通知适配；补齐淘宝闪购前台原生推送服务启动 |
+| EuLocation-v0.6.0-slim-test.zip | KernelSU 刷入 | 卡包四个后台、超级小爱核心＋唤醒、原生搜索，可分别选择 |
+| MiWallet-6.111.0.5701.2736-original.apk | 可选普通 APK | 小米原签名钱包主 App；只用设置卡包无需安装 |
+| Island-v0.18-xmsf-china-route-test.apk | LSPosed | 淘宝闪购／饿了么、滴滴及焦点通知适配，修复指定 EU 小米服务框架的国内推送登记 |
+| EUBoost-v0.10.1-browser-fix-test.apk | LSPosed，沿用上一 Release | 应用录音、设置卡包入口、负一屏、局部系统应用更新许可、桌面搜索及 Google 浏览器跳转 |
 
-Release 标为 **Pre-release 测试版**。请下载命名附件，不要刷 GitHub 自动生成的 Source code ZIP。核对同页 `SHA256SUMS.txt`。
+本次更新前三项；EU增强仍为 v0.10.1，可从[上一测试版](https://github.com/tiancaiProgramer/EuLocation/releases/tag/v0.5.0-eu-suite-test)下载。附件相互独立，不是一个 APK。核对 SHA256SUMS.txt，**不要刷 GitHub 自动生成的 Source code ZIP**。
 
-## 1. EuLocation：安装应用与后台组件
+## EuLocation：卡包、小爱、搜索
 
-刷入时可确认默认组合，也可自定义三个组件。**默认：仅卡包＋超级小爱＋搜索自动识别**。音量键确认；每个提示超时 30 秒会取消，不会静默全选。
+默认组合：**卡包后台＋超级小爱＋搜索自动识别**。可以自定义选择卡包装／不装、小爱装／不装、搜索不装／自动／普通／折叠。音量键确认，30 秒无选择则取消；已管理的组件不能通过取消勾选来卸载，安装器会中止。
 
-| 组件 | 可选项 |
+v0.6.0 从包中完整移除 MipayWallet 主 APK 和84个重复外置库。钱包主 APK 内已包含这些库；作为普通应用安装时由 Android 处理。四个卡包后台 MITSMClient、MINextpay、UPTsmService、PaymentService 及其所需载荷保留。原始 EU307 有 NFC、SecureElement 和设置入口相关代码，但不含这四个后台 APK，故不能把卡包支持整体删除。
+
+**只用卡包不需要安装钱包主 APK。** 设置入口由 EU增强的“设置”作用域提供；EuLocation 提供后台，二者分工不同。真实支付、增删卡及所有金融业务不作为本次测试结论。
+
+旧版升级：若模块中仍有钱包主 App，先停用该主 App。安装器校验其原 APK，在 root 私有目录 `/data/adb/eulocation-backups` 保存主 APK 和主 App 数据后，新模块不再挂载它。Android 在重启时可能清理该主 App 的活动数据；卡包后台数据、卡片设置和小爱录入不清理。备份是本机回退资料，不是可跨机恢复的支付卡备份。存在其它用户的钱包数据、未知旧 APK 或备份失败时中止。已有独立 `/data/app` 钱包不由模块启停或移除。
+
+保留内部模块 ID `HyperOS3EU307Optional` 做原位升级；不再包含“钱包 App＋卡包”安装选项，也无开机钱包主 App 启停规则。不修改助手和 NFC 默认项，不自动接受协议、授权、登录或重录。
+
+搜索含原签名普通／折叠 APK，仅提取所选版本。自动识别优先折叠属性，再参考 Fold／Flip 型号，支持手动覆盖。首次用原生偏好减少热榜、推荐和推广，后续不覆盖用户选择；不承诺所有联网内容无广告。Google 引擎、上滑和默认浏览器由 EU增强实现。普通版已在 EU307 使用；折叠版没有 EU 折叠机安装实测。
+
+## EU增强：按应用提供兼容
+
+| LSPosed 作用域 | 功能 |
 | --- | --- |
-| 钱包 | 不安装／仅卡包（默认）／钱包主 App＋卡包 |
-| 超级小爱 | 不安装／核心＋语音唤醒（默认） |
-| 搜索 | 不安装／自动识别（默认）／手动普通手机版／手动折叠版 |
+| 录音机 com.android.soundrecorder | 进程内 CN 兼容，恢复应用录音；不是已验证的自动通话录音方案 |
+| 设置 com.android.settings | 原生卡包入口，需 EuLocation 卡包后台 |
+| 智能助理 com.miui.personalassistant | 负一屏出行助手入口及初始化，不代替本人授权 |
+| 安装器 com.miui.packageinstaller | 局部系统应用更新解析兼容，保留签名、降级等检查；不关闭安全扫描 |
+| 系统桌面 com.miui.home | EU307 桌面上滑原生搜索入口 |
+| 搜索 com.android.quicksearchbox | Google 引擎及当前默认浏览器跳转，实测默认 Chrome |
 
-搜索优先检查折叠屏系统标记，再参考型号／市场名里的 Fold、Flip；其它情况回落普通版，支持手动覆盖。ZIP 含两份原签名 APK，仅解包所选一份及其原生库／权限配置。已只读验证小米 15 选普通版、MIX Fold 3 选折叠版；**折叠搜索尚未在 EU 折叠机安装实测**。
+旧用户需手动加入新推荐项；推荐不会覆盖已有作用域。其它用户选中的、通过系统标记及路径检查的应用沿用录音机式 CN 兼容；上述专用应用使用各自策略。**小米服务框架不在 EU增强处理，请交给超级岛。** 原独立负一屏和 system allow 的能力已并入 EU增强，不需要重复叠加。
 
-首次初始化用原生偏好关闭热榜、首页应用推荐、推广提示词、“搜索精选”来源，以及普通版的下载／游戏推广，保留本机应用搜索。之后不反复覆盖用户调整；不承诺所有联网页面无广告。Google 引擎和桌面入口由配套 EU增强负责。
+## 超级岛 v0.18
 
-仅卡包新安装不提取钱包主 App。已有钱包迁移时，保留原签名钱包 APK 作为数据载体，并对 user 0 停用主 App，保留卡片后台；这类迁移不是物理删除钱包 APK。升级不能通过取消已管理组件来卸载它们，安装器会中止。内部 ID `HyperOS3EU307Optional` 保持以便原位升级，不是机型白名单。
+LSPosed 按已安装应用勾选：淘宝闪购／饿了么 `me.ele`、滴滴 `com.sdu.didi.psnger`、系统界面 `com.android.systemui`、系统界面组件 `miui.systemui.plugin`、小米服务框架 `com.xiaomi.xmsf`。不要把 XMSF 同时交给 EU增强或其它区域 Hook。
 
-不清卡片、语音录入或应用数据，不改默认助手／NFC 支付组件；首次协议、权限、默认助手及唤醒录入由本人选择。保留 NFC/eSE/HCE、语音依赖、已安装 APK 路径／哈希、载荷完整性及 HyperOS 3 xiaomi.eu / Android 16 arm64 检查。旧钱包／小爱重复载荷模块应备份后停用；不要同时挂载重复组件。
+保留 v0.15 的淘宝闪购前台原生推送服务启动方案及真实通知焦点适配。v0.16 修正待付款状态筛选，并增加限量、不含正文／订单／位置的诊断元数据。
 
-## 2. EU增强：按应用提供兼容策略
+v0.18 修复 EU307 的 **XMSF 6.2.67-G / code60002067** 在 China/CN 条件下的启用判断、国内推送主机和设备登记 URL。仅在精确包名／版本、MIUI 和 China 条件下生效，未知版本保持原行为；不改系统区域属性或清除登记缓存。使用原生小米通道，没有轮询、后台保活或模拟订单。
 
-安装 APK，在 LSPosed 启用并按需勾选，随后重启或重启受影响应用进程。推荐项不会强制覆盖旧用户作用域。
+已实机验证：滴滴 SDK 和业务层推送 ID 从空恢复为有效，国内通道连接与绑定成功；恢复平时代理后重新连接及登记仍通过。**修复后尚未用新真实行程验证滴滴可见岛，不宣称滴滴端到端修复完成。** 淘宝闪购 v0.15 曾验证真实订单显示及送达更新；无需打开 App 的即时后台更新、长期稳定性、手环流转仍未证明。
 
-| 勾选作用域 | 提供功能 |
-| --- | --- |
-| 录音机 `com.android.soundrecorder` | 进程内 CN 兼容，恢复应用录音能力；不宣传为已验证的通话自动录音 |
-| 设置 `com.android.settings` | 设置内的原生卡包入口，需要 EuLocation 钱包／仅卡包后台 |
-| 智能助理 `com.miui.personalassistant` | 负一屏出行助手入口及原生行程后台初始化；不代替本人授权 |
-| 应用包管理组件 `com.miui.packageinstaller` | 解析普通 APK 时局部提供系统应用更新兼容；保留签名、降级等系统检查，不承诺所有渠道都可更新 |
-| 系统桌面 `com.miui.home` | 保留桌面上滑进入原生搜索的选项；当前仅核验 EU307 这份桌面 APK |
-| 搜索 `com.android.quicksearchbox` | 原生引擎列表加入 Google；Google 查询跟随系统默认浏览器，不绑定 Chrome |
+## 测试与源码
 
-搜索分工：EuLocation 安装原版搜索及精简默认值；EU增强负责桌面入口、Google 引擎和跳转。v0.10.1 修复原版固定调用小米浏览器的问题；实测当前默认 Chrome 能显示 Google 结果页。其它默认浏览器未逐一实测。
+EuLocation 的载荷逐文件哈希／CRC、迁移备份／拒绝条件、组件选择、搜索变体检查见 `tests`、`tools/verify_search_bundle.py`。超级岛策略测试见 `super-island/tests`。本轮刷入并重启后，用户确认无钱包主 App 的卡包首页及原有卡片正常，小爱桌面／锁屏均能沿用原录入唤醒；后台数据目录与默认项核对不变。详见 Release 说明。
 
-其它由用户选择、通过系统标记和分区路径检查的 App，默认沿用录音机的进程内 CN 兼容。设置、智能助理、安装器、桌面、搜索使用各自的窄适配；未知 APK 版本保留原行为。搜索只接受两份已核验原 APK，也允许它们作为数据应用安装；这不放宽通用 CN 路径。**EU增强始终排除小米服务框架，不再在这里 Hook XMSF，也不 Hook system_server。**
-
-原独立负一屏和 system allow 的对应能力已并入 EU增强。保留原有全局设置，不修改隐私授权、代理或安装安全扫描策略。
-
-## 3. 超级岛：实时服务通知适配
-
-安装独立 APK，在 LSPosed 启用。实测组合保留以下作用域，业务 App 按实际安装选择：
-
-| 作用域 | 用途 |
-| --- | --- |
-| 淘宝闪购／饿了么 `me.ele` | 业务焦点通知、原生 MiPush 路由；v0.15 在应用前台恢复时请求启动其自身原生推送服务 |
-| 滴滴 `com.sdu.didi.psnger` | 已适配版本的行程通知策略和焦点载荷；未知版本不保证有效 |
-| 系统界面 `com.android.systemui` | 系统通知侧焦点处理 |
-| 系统界面组件 `miui.systemui.plugin` | 超级岛显示侧处理 |
-| 小米服务框架 `com.xiaomi.xmsf` | 兼容保留作用域；**v0.15 为被动 no-op，不改 CN／Global，不安装方法拦截** |
-
-该模块不依赖 EU增强对小米服务框架提供 CN 伪装，不需要重新把 XMSF 加回 EU增强。当前组合成功不代表每个勾选都被证明是必要条件。
-
-v0.15 在淘宝闪购主进程、既有路由适配成功时处理 Activity resume，校验组件及启用状态，再请求启动应用自身服务。每个进程成功后不再尝试，失败只在后续 resume 且至少间隔 30 秒时再试；无轮询定时器、后台保活或模拟订单。
-
-EU307 实测：重启淘宝闪购进程后，模块自动启动原生服务，真实订单通知触发可见超级岛；新的“已送达”载荷也已显示。曾打开订单详情，不能据此证明无需打开应用的后台及时更新。整机冷启动自动恢复、其它订单／App、长期稳定性未验证。滴滴沿用既有适配，**本 Release 没有新增真实滴滴订单回归**。手环同步未通过验证，手机上岛不等于手环支持。
-
-## 测试范围、升级与数据保留
-
-- EU307 已验证：Google 引擎实际菜单、桌面上滑原生搜索、本机录音机搜索／打开、Google 经当前默认 Chrome 显示结果页。
-- 原小爱助手、NFC 默认组件和仅卡包停用状态在更新后核对保持；此前用户确认卡包原卡、小爱桌面／锁屏沿旧录入正常。本次搜索升级未重新做真实卡片内容或语音唤醒人工回归。
-- 没有执行支付、开删卡、充值、卡片迁移、银行认证或清数据。其它机型／EU 版本、全部云端功能、长期耗电与 OTA 未验证。
-- KSU 所选组件需要能看见模块挂载；检查各自 App Profile 的卸载／隐藏模块设置，不要全局改变隐藏策略或为这些 App 授予 Root。
-- 有钱包数据载体的迁移，彻底移除前先恢复完整模式；卸载挂载模块后 Android 可能清理缺失系统包的数据。保留自己的兼容备份，不要为通过检查清数据或强制降级。
-
-## 源码目录
-
-- `module/`、`tools/`、`tests/`：EuLocation 安装器、构建／校验与测试。
-- `eu-boost/`：EU增强源码及检查，取代旧 `cn-hook/` 当前开发目录。
-- `super-island/`：独立超级岛源码及检查。
-
-安装 ZIP 中的 OEM APK／库不是本项目开源源码，见 [第三方说明](THIRD_PARTY_NOTICES.md)。编译依赖 Android SDK/JDK、libxposed API 102；依赖库和本机签名资料不提交。三个项目在本机仍分别维护，发布仓库按上述子目录汇总。
-
-当前 ZIP 的载荷／源码校验工具为 `tools/verify_search_bundle.py`；`tools/verify_release.py` 保留旧发布版的固定哈希检查。原生 OEM 载荷不放入源码，构建安装 ZIP 需本机准备相应原始载荷。Gradle 工程可独立配置 Android SDK/JDK；SDK 离线脚本默认本机工具目录，外部开发者需调整工具路径。
+源码目录：`module` 为 KSU 安装脚本，`eu-boost` 为 EU增强，`super-island` 为超级岛。OEM APK／库仅在对应命名附件中，未放入源码树；用户日志、ROM 镜像、私有备份和签名密钥不公开。其它机型、真实支付、全部小爱云端功能、耗电及 OTA 未验证。组件权利说明见 THIRD_PARTY_NOTICES.md。
